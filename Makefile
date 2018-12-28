@@ -1,4 +1,4 @@
-CXXFLAGS=-Wall -Wextra -O2
+CXXFLAGS=-march=native -Wall -Wextra -Wno-sign-compare -O3 -g -std=c++17
 
 OBJS=quarto.o main.o
 
