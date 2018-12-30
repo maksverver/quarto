@@ -12,6 +12,8 @@
 
 namespace {
 
+using Move = State::Move;
+
 const char *palette = "ab+-01xy";
 
 const std::array<std::string, 16> piece_ids = []{
@@ -98,32 +100,32 @@ void DrawState(std::ostream &os, const State &state) {
     for (const auto &line : grid) os << Rtrim(line, ' ') << '\n';
 }
 
-std::optional<State::Move> ParseMove(const std::string &line) {
+std::optional<Move> ParseMove(const std::string &line) {
     std::string lower = ToLower(line);
     if (lower.size() == 2 &&
             (lower[0] >= 'a' && lower[0] <= 'd') &&
             (lower[1] >= '1' && lower[1] <= '4')) {
-        return {State::Move::Place(4*('4' - lower[1]) + (lower[0] - 'a'))};
+        return Move::Place(4*('4' - lower[1]) + (lower[0] - 'a'));
     }
     if (lower == "p" || lower == "pass") {
-        return {State::Move::Pass()};
+        return Move::Pass();
     }
     if (lower == "q" || lower == "quarto") {
-        return {State::Move::Quarto()};
+        return Move::Quarto();
     }
     for (int i = 0; i < piece_ids.size(); ++i) {
         if (lower == ToLower(piece_ids[i])) {
-            return {State::Move::Select(i)};
+            return Move::Select(i);
         }
     }
     return std::nullopt;
 }
 
-std::ostream &operator<<(std::ostream &os, State::Move move) {
+std::ostream &operator<<(std::ostream &os, Move move) {
     switch (move.GetType()) {
-    case State::Move::Type::SELECT:
+    case Move::Type::SELECT:
         return os << piece_ids.at(move.SelectedPiece());
-    case State::Move::Type::PLACE:
+    case Move::Type::PLACE:
         {
             int field = move.PlacedField();
             if (field >= 0) {
@@ -134,17 +136,17 @@ std::ostream &operator<<(std::ostream &os, State::Move move) {
             assert(false);
             return os;
         }
-    case State::Move::Type::QUARTO:
+    case Move::Type::QUARTO:
         return os << "quarto";
-    case State::Move::Type::PASS:
+    case Move::Type::PASS:
         return os << "pass";
     }
     assert(false);
     return os;
 }
 
-bool AllMovesValid(const State &state, const std::vector<State::Move> &moves) {
-    for (State::Move move : moves) {
+bool AllMovesValid(const State &state, const std::vector<Move> &moves) {
+    for (Move move : moves) {
         if (!state.IsValid(move)) return false;
     }
     return true;
@@ -158,7 +160,7 @@ int main() {
         assert(AllMovesValid(state, state.ListValidMoves()));  // sanity check
 
         DrawState(std::cout, state);
-        std::optional<State::Move> move;
+        std::optional<Move> move;
         while (!move) {
             std::cout << "Player " << (state.NextPlayer() + 1) << " to move. ";
             std::cout << "(Q)uarto or ";
@@ -188,7 +190,7 @@ int main() {
             }
             if (!move) {
                 std::cout << "Valid moves are:";
-                for (State::Move move : state.ListValidMoves()) {
+                for (Move move : state.ListValidMoves()) {
                     std::cout << ' ' << move;
                 }
                 std::cout << std::endl;
