@@ -4,6 +4,9 @@
 
 namespace {
 
+using internal::CheckPiece;
+using internal::CheckField;
+
 // winning_lines[] encodes the horizontal, vertical and diagonal lines on the
 // board along which a Quarto can be formed.
 //
@@ -82,7 +85,7 @@ bool State::IsQuartoPossible() const {
     return false;
 }
 
-std::vector<State::Move> State::ListValidMoves() const {
+std::vector<Move> State::ListValidMoves() const {
     std::vector<Move> result;
     switch (NextAction()) {
     case NextAction::SELECT:

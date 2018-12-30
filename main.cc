@@ -14,8 +14,6 @@
 
 namespace {
 
-using Move = State::Move;
-
 const char *palette = "ab+-01xy";
 
 const std::array<std::string, 16> piece_ids = []{

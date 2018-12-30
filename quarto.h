@@ -6,6 +6,20 @@
 #include <array>
 #include <vector>
 
+namespace internal {
+
+constexpr int CheckField(int field) {
+    assert(field >= 0 && field < 16);
+    return field;
+}
+
+constexpr int CheckPiece(int piece) {
+    assert(piece >= 0 && piece < 16);
+    return piece;
+}
+
+}  // namespace internal
+
 enum class NextAction {
     NONE,    // game is over -- no actions are possible
     SELECT,  // select a piece for the opponent to place (or call quarto)
@@ -13,46 +27,46 @@ enum class NextAction {
     PASS,    // pass (or call quarto)
 };
 
+class Move {
+public:
+    enum class Type {
+        SELECT,
+        PLACE,
+        QUARTO,
+        PASS,
+    };
+    static Move Select(int piece) {
+        Move move(Type::SELECT);
+        move.piece = internal::CheckPiece(piece);
+        return move;
+    }
+    static Move Place(int field) {
+        Move move(Type::PLACE);
+        move.field = internal::CheckField(field);
+        return move;
+    }
+    static Move Quarto() { return Move(Type::QUARTO); }
+    static Move Pass() { return Move(Type::PASS); }
+
+    Move(const Move&) = default;
+    Move& operator=(const Move&) = default;
+
+    Type GetType() { return type; }
+    int SelectedPiece() { return type == Type::SELECT ? piece : -1; }
+    int PlacedField() { return type == Type::PLACE ? field : -1; }
+
+private:
+    Move(Type type) : type(type) {}
+
+    Type type;
+    union {
+        int piece;  // if type == SELECT
+        int field;  // if type == PLACE
+    };
+};
+
 class State {
 public:
-    class Move {
-    public:
-        enum class Type {
-            SELECT,
-            PLACE,
-            QUARTO,
-            PASS,
-        };
-        static Move Select(int piece) {
-            Move move(Type::SELECT);
-            move.piece = CheckPiece(piece);
-            return move;
-        }
-        static Move Place(int field) {
-            Move move(Type::PLACE);
-            move.field = CheckField(field);
-            return move;
-        }
-        static Move Quarto() { return Move(Type::QUARTO); }
-        static Move Pass() { return Move(Type::PASS); }
-
-        Move(const Move&) = default;
-        Move& operator=(const Move&) = default;
-
-        Type GetType() { return type; }
-        int SelectedPiece() { return type == Type::SELECT ? piece : -1; }
-        int PlacedField() { return type == Type::PLACE ? field : -1; }
-
-    private:
-        Move(Type type) : type(type) {}
-
-        Type type;
-        union {
-            int piece;  // if type == SELECT
-            int field;  // if type == PLACE
-        };
-    };
-
     static State Initial() { return State(); }
 
     State(const State&) = default;
@@ -63,9 +77,9 @@ public:
     int NextPlayer() const { return ((num_moves + 1) >> 1) & 1; }
     bool Over() const { return quarto || num_moves >= 34; }
     int Winner() const { return quarto ? PreviousPlayer() : -1; }
-    bool Empty(int field) const { return fields[CheckField(field)] < 0; }
-    int PieceAt(int field) const { return fields[CheckField(field)]; }
-    bool Available(int piece) const { return pieces[CheckPiece(piece)]; }
+    bool Empty(int field) const { return fields[internal::CheckField(field)] < 0; }
+    int PieceAt(int field) const { return fields[internal::CheckField(field)]; }
+    bool Available(int piece) const { return pieces[internal::CheckPiece(piece)]; }
     int LastField() const { return last_field; }
     int LastPiece() const { return last_piece; }
     inline ::NextAction NextAction() const;
@@ -79,16 +93,6 @@ public:
 
 private:
     inline State();
-
-    static inline int CheckField(int field) {
-        assert(field >= 0 && field < 16);
-        return field;
-    }
-
-    static inline int CheckPiece(int piece) {
-        assert(piece >= 0 && piece < 16);
-        return piece;
-    }
 
     // Number of moves played so far. 0 through 34 (inclusive).
     // Selecting a piece and placing it count as separate moves.
