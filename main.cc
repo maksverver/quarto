@@ -2,10 +2,12 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 #include <array>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <optional>
 #include <string>
 #include <vector>
@@ -152,10 +154,72 @@ bool AllMovesValid(const State &state, const std::vector<Move> &moves) {
     return true;
 }
 
+static const char base34digits[] = "0123456789abcdefghijklmnopqrstuvwx";
+
+std::optional<Move> DecodeMove(char ch) {
+    const char *p = strchr(base34digits, ch);
+    if (!p) return std::nullopt;
+    int i = p - base34digits;
+    assert(i >= 0 && i < 34);
+    if (i < 16) return Move::Select(i);
+    if (i < 32) return Move::Place(i - 16);
+    if (i == 32) return Move::Quarto();
+    if (i == 33) return Move::Pass();
+    return std::nullopt;  // unreachable
+}
+
+char EncodeMove(Move move) {
+    switch (move.GetType()) {
+    case Move::Type::SELECT:
+        return base34digits[move.SelectedPiece()];
+    case Move::Type::PLACE:
+        return base34digits[move.PlacedField() + 16];
+    case Move::Type::QUARTO:
+        return base34digits[32];
+    case Move::Type::PASS:
+        return base34digits[33];
+    }
+    return '?';  // unreachable
+}
+
+void PrintHistory(std::ostream& os, const std::vector<Move> moves) {
+    os << " 0. ..";
+    for (size_t i = 0; i < moves.size(); ++i) {
+        if (i%4 == 3) {
+            os << '\n' << std::setw(2) << i + 1 << '.';
+        }
+        os << ' ' << moves[i];
+    }
+    os << '\n';
+
+    os << "Compact: ";
+    for (Move move : moves) os << EncodeMove(move);
+    os << '\n';
+}
+
 }  // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc > 2) {
+        std::cerr << "Unexpected arguments! Usage: quarto [<state>]" << std::endl;
+        return 1;
+    }
     State state = State::Initial();
+    std::vector<Move> history;
+    if (argc == 2) {
+        for (const char *p = argv[1]; *p; ++p) {
+            std::optional<Move> move = DecodeMove(*p);
+            if (!move) {
+                std::cerr << "Unrecognized move '" << *p << "'." << std::endl;
+                return 1;
+            }
+            if (!state.Execute(*move)) {
+                std::cerr << "Invalid move " << *move << " ('" << *p << "')." << std::endl;
+                return 1;
+            }
+            history.push_back(*move);
+        }
+    }
     while (!state.Over()) {
         assert(AllMovesValid(state, state.ListValidMoves()));  // sanity check
 
@@ -181,11 +245,19 @@ int main() {
                 std::cout << "\nEnd of input! Exiting." << std::endl;
                 return 0;
             }
+            std::string lower_line = ToLower(line);
+            if (lower_line == "x" || lower_line == "exit") {
+                return 0;
+            }
+            if (lower_line == "h" || lower_line == "history") {
+                PrintHistory(std::cout, history);
+                continue;
+            }
             move = ParseMove(line);
             if (!move) {
                 std::cout << "Unrecognized move: \"" << line << "\"" << std::endl;
             } else if (!state.IsValid(*move)) {
-                std::cout << "Move is not allowed: \"" << line << "\"" << std::endl;
+                std::cout << "Move is not allowed: " << *move << std::endl;
                 move = std::nullopt;
             }
             if (!move) {
@@ -196,6 +268,7 @@ int main() {
                 std::cout << std::endl;
             }
         }
+        history.push_back(*move);
         state.ExecuteValid(*move);
     }
 
