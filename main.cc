@@ -1,4 +1,5 @@
 #include "quarto.h"
+#include "ai.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -202,6 +204,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unexpected arguments! Usage: quarto [<state>]" << std::endl;
         return 1;
     }
+    std::unique_ptr<Ai> ai;
     State state = State::Initial();
     std::vector<Move> history;
     if (argc == 2) {
@@ -251,6 +254,12 @@ int main(int argc, char* argv[]) {
                 PrintHistory(std::cout, history);
                 continue;
             }
+            if (lower_line == "a" || lower_line == "ai") {
+                if (!ai) ai = std::make_unique<Ai>(state);
+                move = ai->CalculateMove();
+                std::cout << "AI chose move: " << *move << std::endl;
+                continue;
+            }
             move = ParseMove(line);
             if (!move) {
                 std::cout << "Unrecognized move: \"" << line << "\"" << std::endl;
@@ -268,6 +277,7 @@ int main(int argc, char* argv[]) {
         }
         history.push_back(*move);
         state.ExecuteValid(*move);
+        if (ai) ai->ExecuteValid(*move);
     }
 
     DrawState(std::cout, state);
