@@ -48,6 +48,10 @@ void DrawState(std::ostream &os, const State &state) {
         grid[r + 1][c + 0] = i < 0 ? '.' : piece_ids[i][2];
         grid[r + 1][c + 1] = i < 0 ? '.' : piece_ids[i][3];
     };
+    auto draw_piece_border = [&grid](int r, int c) {
+        grid[r][c] = grid[r + 1][c] = '[';
+        grid[r][c + 3] = grid[r + 1][c + 3] = ']';
+    };
     // Draw board.
     {
         int r1 = 0, c1 = 4, r2 = 12, c2 = 21;
@@ -65,12 +69,7 @@ void DrawState(std::ostream &os, const State &state) {
             }
         }
         int i = state.LastField();
-        if (i >= 0) {
-            int r = i / 4;
-            int c = i % 4;
-            grid[r1 + 3*r + 1][c1 + 4*c + 1] = grid[r1 + 3*r + 2][c1 + 4*c + 1] = '[';
-            grid[r1 + 3*r + 1][c1 + 4*c + 4] = grid[r1 + 3*r + 2][c1 + 4*c + 4] = ']';
-        }
+        if (i >= 0) draw_piece_border(r1 + 1 + 3*(i / 4), c1 + 1 + 4*(i % 4));
     }
     // Draw available pieces.
     {
@@ -81,6 +80,9 @@ void DrawState(std::ostream &os, const State &state) {
                 draw_piece(r1 + 3*r, c1 + 4*c, state.Available(i) ? i : -1);
             }
         }
+        int i = state.LastPiece();
+        if (i >= 0) draw_piece_border(r1 + 3*(i / 4), c1 + 4*(i % 4) - 1);
+
     }
     // Draw action arrows.
     auto draw_arrow = [&grid](int r, int c1, int c2, char head, char mid, char tail) {
