@@ -1,4 +1,4 @@
-#include "ai.h"
+#include "ai_mcts.h"
 
 #include <assert.h>
 
@@ -418,11 +418,11 @@ Move GetBestMove(Node &node, random_engine_t &random_engine) {
 
 }  // namespace
 
-Ai::Ai(const State &state) : state(state), random_engine(SeedRandomEngine()) {}
+AiMcts::AiMcts(const State &state) : state(state), random_engine(SeedRandomEngine()) {}
 
-Ai::~Ai() = default;
+AiMcts::~AiMcts() = default;
 
-bool Ai::Execute(Move move) {
+bool AiMcts::Execute(Move move) {
     if (!state.Execute(move)) {
         return false;
     }
@@ -450,7 +450,7 @@ bool Ai::Execute(Move move) {
     return true;
 }
 
-Move Ai::CalculateMove() {
+Move AiMcts::CalculateMove() {
     assert(!state.Over());
     if (state.IsQuartoPossible()) {
         return Move::Quarto();

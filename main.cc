@@ -1,5 +1,5 @@
 #include "quarto.h"
-#include "ai.h"
+#include "ai_mcts.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
                 continue;
             }
             if (lower_line == "a" || lower_line == "ai") {
-                if (!ai) ai = std::make_unique<Ai>(state);
+                if (!ai) ai = std::make_unique<AiMcts>(state);
                 move = ai->CalculateMove();
                 std::cout << "AI chose move: " << *move << std::endl;
                 assert(state.IsValid(*move));

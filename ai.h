@@ -3,28 +3,11 @@
 
 #include "quarto.h"
 
-#include <memory>
-#include <random>
-
-namespace ai_internal {
-class Node;
-using random_engine_t = std::mt19937;
-}  // namespace ai_internal
-
 class Ai {
 public:
-    Ai(const State &state);
-    ~Ai();
-
-    bool Execute(Move move);
-
-    Move CalculateMove();
-
-private:
-    using random_t = std::mt19937;
-    State state;
-    std::unique_ptr<ai_internal::Node> root;
-    ai_internal::random_engine_t random_engine;
+    virtual ~Ai() = default;
+    virtual bool Execute(Move move) = 0;
+    virtual Move CalculateMove() = 0;
 };
 
 #endif /* ndef AI_H_INCLUDED */
