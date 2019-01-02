@@ -14,6 +14,12 @@
 #include <string>
 #include <vector>
 
+#ifdef NDEBUG
+#define USED_IN_ASSERT __attribute__((__unused__))
+#else
+#define USED_IN_ASSERT
+#endif
+
 namespace {
 
 const char *palette = "ab+-01xy";
@@ -149,6 +155,7 @@ std::ostream &operator<<(std::ostream &os, Move move) {
     return os;
 }
 
+USED_IN_ASSERT
 bool AllMovesValid(const State &state, const std::vector<Move> &moves) {
     for (Move move : moves) {
         if (!state.IsValid(move)) return false;
@@ -260,6 +267,7 @@ int main(int argc, char* argv[]) {
                 if (!ai) ai = std::make_unique<Ai>(state);
                 move = ai->CalculateMove();
                 std::cout << "AI chose move: " << *move << std::endl;
+                assert(state.IsValid(*move));
                 continue;
             }
             move = ParseMove(line);
@@ -279,7 +287,11 @@ int main(int argc, char* argv[]) {
         }
         history.push_back(*move);
         state.ExecuteValid(*move);
-        if (ai) ai->ExecuteValid(*move);
+        if (ai) {
+            bool ok = ai->Execute(*move);
+            assert(ok);
+            if (!ok) ai = nullptr;
+        }
     }
 
     DrawState(std::cout, state);
